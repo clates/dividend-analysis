@@ -2,6 +2,13 @@
 
 Welcome! This tool is designed to be your "Financial Time Machine." It allows you to test different stock market strategies against real historical data from the last 10 years to see exactly how much money you would have made (or lost) if you had followed a specific set of rules.
 
+## 🌐 View the Reports Online
+
+You can view the interactive results and charts directly in your browser here:
+👉 **[View Dividend Analysis Dashboards](https://clates.github.io/dividend-analysis/)**
+
+---
+
 ## 👨‍🏫 How This Works (Simple Explanation)
 
 Imagine you have **$100,000** and a set of rules, like: *"I want to buy a stock 5 days before it pays a dividend and sell it 5 days after."*
