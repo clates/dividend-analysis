@@ -3,44 +3,45 @@ from strategies.base_portfolio_strategy import BasePortfolioStrategy
 
 class DividendPortfolioStrategy(BasePortfolioStrategy):
     """
-    Portfolio-wide Dividend Strategy.
-    Parameterized for buy/sell windows.
+    Pure Dividend Capture Strategy (no churn protection).
+
+    Fires sell signal strictly when days_since_div >= sell_after, with
+    no regard for whether the next dividend is approaching. This is the
+    "baseline" version — useful for studying the raw effect of the timing
+    window without the Loyalty Rule.
+
+    Buy:  Enter when days_to_div <= buy_before
+    Sell: Exit when days_since_div >= sell_after (no loyalty override)
     """
 
-    def __init__(self, buy_before=30, sell_after=30):
+    def __init__(self, buy_before: int = 30, sell_after: int = 30):
         super().__init__()
         self.buy_before = buy_before
         self.sell_after = sell_after
         self.name = f"Dividend Capture Strategy ({buy_before}/{sell_after})"
-        self.description = f"Buys stocks {buy_before} days before their ex-dividend date and sells them {sell_after} days after. Designed to capture both the dividend payment and potential price recovery."
+        self.description = (
+            f"Buys {buy_before} days before ex-dividend date and sells "
+            f"{sell_after} days after. Pure timing — no loyalty override."
+        )
 
-    def compute_signals(
-        self, current_date, active_tickers, portfolio_holdings, market_data
-    ):
-        buy_signals = []
-        sell_signals = []
+    def get_signals(
+        self,
+        current_date,
+        holdings: set,
+        row_to_div,
+        row_since_div,
+    ) -> dict:
+        sell_tickers = []
+        buy_tickers = []
 
-        for ticker in active_tickers:
-            df = market_data[ticker]
+        for t in holdings:
+            days_since = row_since_div[t] if t in row_since_div else 999
+            if days_since >= self.sell_after:
+                sell_tickers.append(t)
 
-            # Check if this ticker has data for today
-            if current_date not in df.index:
-                continue
+        potential_mask = (row_to_div > 0) & (row_to_div <= self.buy_before)
+        for t in row_to_div[potential_mask].index:
+            if t not in holdings:
+                buy_tickers.append(t)
 
-            row = df.loc[current_date]
-
-            # Use our pre-calculated indicators
-            days_to_div = row["DaysToDiv"]
-            days_since_div = row["DaysSinceDiv"]
-
-            # Sell logic: If we hold it and it's X days past dividend
-            if ticker in portfolio_holdings:
-                if days_since_div >= self.sell_after:
-                    sell_signals.append(ticker)
-
-            # Buy logic: If we don't hold it and it's within Y days before dividend
-            else:
-                if 0 < days_to_div <= self.buy_before:
-                    buy_signals.append(ticker)
-
-        return {"buy": buy_signals, "sell": sell_signals}
+        return {"sell": sell_tickers, "buy": buy_tickers}

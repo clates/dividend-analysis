@@ -5,6 +5,7 @@ import json
 import gc
 from datetime import datetime
 from data_manager import DataManager
+from index_manager import get_constituents_for_date
 
 
 class PortfolioEngine:
@@ -20,6 +21,8 @@ class PortfolioEngine:
         self.dm = DataManager()
         self.cash = config["initial_cash"]
         self.commission = config.get("commission", 0.0)
+        self.slippage_pct = config.get("slippage_pct", 0.0)
+        self.account_type = config.get("account_type", "tax_advantaged")
 
         # Portfolio Rules
         self.rules = config.get("portfolio_rules", {})
@@ -32,11 +35,21 @@ class PortfolioEngine:
         self.to_div_matrix = to_div_matrix
         self.since_div_matrix = since_div_matrix
 
-        # Market Cap info for metadata
-        self.market_caps = {}
-        if os.path.exists("market_caps.json"):
-            with open("market_caps.json", "r") as f:
-                self.market_caps = json.load(f)
+        # Historical index constituents for survivorship bias mitigation
+        self.historical_constituents = {}
+        constituents_path = "data/historical_constituents.json"
+        if os.path.exists(constituents_path):
+            with open(constituents_path, "r") as f:
+                self.historical_constituents = json.load(f)
+            print(
+                f"Loaded historical constituents ({len(self.historical_constituents)} snapshots).",
+                flush=True,
+            )
+        else:
+            print(
+                "WARNING: historical_constituents.json not found. No survivorship bias filtering.",
+                flush=True,
+            )
 
         # Accounting
         self.holdings = {}  # {ticker: {'shares': 10, 'entry_price': 100, 'captured_dividends': 0.0}}
@@ -107,6 +120,9 @@ class PortfolioEngine:
         print(f"Simulating {len(sorted_dates)} trading days...", flush=True)
 
         # Load Strategy
+        from strategies.loyal_dividend_portfolio_strategy import (
+            LoyalDividendPortfolioStrategy,
+        )
         from strategies.dividend_portfolio_strategy import DividendPortfolioStrategy
 
         # Extract strategy parameters from config
@@ -116,10 +132,17 @@ class PortfolioEngine:
         buy_before = strat_params.get("buy_before", 30)
         sell_after = strat_params.get("sell_after", 30)
 
-        strategy = DividendPortfolioStrategy(
-            buy_before=buy_before, sell_after=sell_after
-        )
+        strat_name = self.config.get("strategy", "LoyalDividendPortfolioStrategy")
+        if strat_name == "LoyalDividendPortfolioStrategy":
+            strategy = LoyalDividendPortfolioStrategy(
+                buy_before=buy_before, sell_after=sell_after
+            )
+        else:
+            strategy = DividendPortfolioStrategy(
+                buy_before=buy_before, sell_after=sell_after
+            )
 
+        use_constituents = bool(self.historical_constituents)
         strategy_metadata = {
             "name": getattr(strategy, "name", "Unknown Strategy"),
             "description": getattr(strategy, "description", "No description provided."),
@@ -128,13 +151,27 @@ class PortfolioEngine:
             "market_segment": "S&P 500"
             if len(price_matrix.columns) > 400
             else f"{len(price_matrix.columns)} tickers",
+            "slippage_pct": self.slippage_pct,
+            "account_type": self.account_type,
+            "survivorship_filter": use_constituents,
         }
 
         total_divs_collected = 0
+        # Cache current constituents to avoid repeated lookups
+        current_constituents = set()
+        last_constituents_date = ""
 
         for i, current_date in enumerate(sorted_dates):
             if i % 250 == 0:
                 print(f"Progress: {i}/{len(sorted_dates)} days...", flush=True)
+
+            # Update constituents snapshot monthly (first trading day of each month)
+            date_str = pd.to_datetime(current_date).strftime("%Y-%m-%d")
+            if use_constituents and date_str[:7] != last_constituents_date:
+                current_constituents = get_constituents_for_date(
+                    self.historical_constituents, date_str
+                )
+                last_constituents_date = date_str[:7]
 
             row_prices = price_matrix.loc[current_date]
             row_to_div = to_div_matrix.loc[current_date]
@@ -178,18 +215,24 @@ class PortfolioEngine:
                 {"Date": current_date, "Equity": current_equity, "Cash": self.cash}
             )
 
-            # 2. Handle SELLS
-            for t in list(self.holdings.keys()):
-                # Churn Fix: Only sell if we are NOT already in the window for the NEXT dividend
-                days_since = row_since_div[t] if t in row_since_div else 999
-                days_until_next = row_to_div[t] if t in row_to_div else 999
+            # 2. Ask the strategy for today's signals
+            signals = strategy.get_signals(
+                current_date,
+                set(self.holdings.keys()),
+                row_to_div,
+                row_since_div,
+            )
 
-                if days_since >= sell_after and days_until_next > buy_before:
+            # 3. Execute SELLS
+            for t in signals.get("sell", []):
+                if t in self.holdings:
                     price = row_prices[t]
                     shares = self.holdings[t]["shares"]
                     entry_price = self.holdings[t]["entry_price"]
                     captured_divs = self.holdings[t]["captured_dividends"]
 
+                    # Apply slippage to sell price (receive slightly less)
+                    price = price * (1 - self.slippage_pct)
                     price_pnl = (price - entry_price) * shares
                     total_pnl = price_pnl + captured_divs
 
@@ -212,17 +255,20 @@ class PortfolioEngine:
                     )
                     del self.holdings[t]
 
-            # 3. Handle BUYS
+            # 4. Execute BUYS
             if len(self.holdings) < self.max_positions:
-                potential_mask = (row_to_div > 0) & (row_to_div <= buy_before)
-                potential_buys = row_to_div[potential_mask].index
-
-                for t in potential_buys:
+                for t in signals.get("buy", []):
                     if len(self.holdings) >= self.max_positions:
                         break
 
+                    # Survivorship bias filter: only buy if ticker was in index on this date
+                    if use_constituents and t not in current_constituents:
+                        continue
+
                     if t not in self.holdings and not np.isnan(row_prices[t]):
-                        price = row_prices[t]
+                        # Apply slippage to buy price (pay slightly more)
+                        raw_price = row_prices[t]
+                        price = raw_price * (1 + self.slippage_pct)
                         target_investment = current_equity * self.max_pos_size_pct
                         actual_investment = min(target_investment, self.cash)
 
@@ -475,7 +521,25 @@ class PortfolioEngine:
                 <h2>Portfolio Analysis Dashboard</h2>
                 <span class="badge bg-secondary">Generated on {datetime.now().strftime("%Y-%m-%d %H:%M")}</span>
             </div>
-            <div class="card mb-4 border-0 bg-white shadow-sm"><div class="card-body"><div class="row"><div class="col-md-6"><h5 class="text-primary">{strategy_metadata["name"]}</h5><p class="mb-0 text-secondary">{strategy_metadata["description"]}</p></div><div class="col-md-3"><div class="small font-weight-bold text-uppercase text-muted">Period</div><div>{strategy_metadata["start_date"]} to {strategy_metadata["end_date"]}</div></div><div class="col-md-3"><div class="small font-weight-bold text-uppercase text-muted">Segment</div><div>{strategy_metadata["market_segment"]}</div></div></div></div></div>
+            <div class="card mb-4 border-0 bg-white shadow-sm"><div class="card-body"><div class="row">
+                <div class="col-md-5"><h5 class="text-primary">{strategy_metadata["name"]}</h5><p class="mb-0 text-secondary">{strategy_metadata["description"]}</p></div>
+                <div class="col-md-2"><div class="small text-uppercase text-muted fw-bold">Period</div><div>{strategy_metadata["start_date"]} to {strategy_metadata["end_date"]}</div></div>
+                <div class="col-md-2"><div class="small text-uppercase text-muted fw-bold">Segment</div><div>{strategy_metadata["market_segment"]}</div></div>
+                <div class="col-md-3">
+                    <div class="small text-uppercase text-muted fw-bold">Reality Constraints</div>
+                    <div class="mt-1">
+                        <span class="badge {"bg-success" if strategy_metadata.get("survivorship_filter") else "bg-warning text-dark"}">
+                            {"✓ Survivorship Filter" if strategy_metadata.get("survivorship_filter") else "⚠ No Survivorship Filter"}
+                        </span>
+                        <span class="badge bg-info text-dark ms-1" title="Simulated cost of not getting the perfect market price">
+                            Slippage: {strategy_metadata.get("slippage_pct", 0) * 100:.2f}%
+                        </span>
+                        <span class="badge bg-secondary ms-1">
+                            {"IRA/401k" if strategy_metadata.get("account_type") == "tax_advantaged" else "Taxable"}
+                        </span>
+                    </div>
+                </div>
+            </div></div></div>
             <div class="row mb-4">
                 <div class="col-md-2"><div class="metric-card"><div class="metric-label">Initial</div><div class="metric-value">{initial_cash_str}</div></div></div>
                 <div class="col-md-3"><div class="metric-card"><div class="metric-label">Final Value</div><div class="metric-value">{final_equity_str}</div></div></div>

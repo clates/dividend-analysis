@@ -1,0 +1,13 @@
+{
+    "Initial Cash": 100000,
+    "Final Equity": 660230.3,
+    "Total Return %": 560.23,
+    "Max Drawdown %": -38.89,
+    "Total Trades": 5853,
+    "Benchmarks": {
+        "CD_5Pct": 62.7,
+        "S&P500_SPY": 362.43,
+        "EqualWeight_RSP": 257.09,
+        "Balanced_60_40": 217.68
+    }
+}

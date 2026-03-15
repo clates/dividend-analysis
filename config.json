@@ -1,7 +1,9 @@
 {
-    "strategy": "DividendStrategy",
+    "strategy": "LoyalDividendPortfolioStrategy",
     "initial_cash": 100000,
     "commission": 0.000,
+    "slippage_pct": 0.0005,
+    "account_type": "tax_advantaged",
     "portfolio_rules": {
         "max_active_positions": 20,
         "max_position_size_pct": 0.05,
@@ -10,3 +12,4 @@
     },
     "tickers": ["ALL"]
 }
+
