@@ -1,0 +1,12 @@
+{
+    "strategy": "DividendStrategy",
+    "initial_cash": 100000,
+    "commission": 0.000,
+    "portfolio_rules": {
+        "max_active_positions": 20,
+        "max_position_size_pct": 0.05,
+        "allocation_mode": "equal_weight",
+        "ranking_criteria": "dividend_yield"
+    },
+    "tickers": ["ALL"]
+}
