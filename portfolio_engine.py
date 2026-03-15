@@ -180,7 +180,11 @@ class PortfolioEngine:
 
             # 2. Handle SELLS
             for t in list(self.holdings.keys()):
-                if t in row_since_div and row_since_div[t] >= sell_after:
+                # Churn Fix: Only sell if we are NOT already in the window for the NEXT dividend
+                days_since = row_since_div[t] if t in row_since_div else 999
+                days_until_next = row_to_div[t] if t in row_to_div else 999
+
+                if days_since >= sell_after and days_until_next > buy_before:
                     price = row_prices[t]
                     shares = self.holdings[t]["shares"]
                     entry_price = self.holdings[t]["entry_price"]
