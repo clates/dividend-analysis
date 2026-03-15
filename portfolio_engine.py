@@ -354,7 +354,7 @@ class PortfolioEngine:
         total_trades_str = str(summary["Total Trades"])
         return_color = "green" if summary["Total Return %"] >= 0 else "red"
 
-        equity_cols = ["Date", "Equity"] + [
+        equity_cols = ["Date", "Equity", "Cash"] + [
             c
             for c in equity_df.columns
             if c
@@ -385,7 +385,8 @@ class PortfolioEngine:
         )
 
         if not trades_df.empty:
-            recent = trades_df.tail(50).iloc[::-1].copy()
+            # We'll use all trades for DataTables
+            all_trades = trades_df.iloc[::-1].copy()
             for col in [
                 "Price",
                 "Value",
@@ -394,40 +395,48 @@ class PortfolioEngine:
                 "DivCaptured",
                 "TotalPnL",
             ]:
-                if col in recent.columns:
-                    recent[col] = recent[col].apply(
+                if col in all_trades.columns:
+                    all_trades[col] = all_trades[col].apply(
                         lambda x: (
-                            f"${x:,.2f}"
+                            round(x, 2)
                             if pd.notnull(x) and isinstance(x, (int, float))
-                            else "-"
+                            else None
                         )
                     )
-            recent["Date"] = recent["Date"].dt.strftime("%Y-%m-%d")
+            all_trades["Date"] = all_trades["Date"].dt.strftime("%Y-%m-%d")
 
-            rows = []
-            for _, r in recent.iterrows():
-                cls = "table-success" if r["Action"] == "SELL" else "table-danger"
-                rows.append(
-                    f"<tr class='{cls}'>"
-                    + "".join([f"<td>{v}</td>" for v in r])
-                    + "</tr>"
-                )
-            trades_html = (
-                f'<table class="table table-sm table-hover align-middle"><thead class="table-dark"><tr>'
-                + "".join([f"<th>{c}</th>" for c in recent.columns])
-                + f"</tr></thead><tbody>"
-                + "".join(rows)
-                + "</tbody></table>"
-            )
+            # Convert to JSON for DataTables to handle large dataset efficiently
+            trades_json = all_trades.to_json(orient="records")
+
+            trades_html = """
+            <table id="trades-table" class="display table table-sm table-hover align-middle" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Ticker</th>
+                        <th>Action</th>
+                        <th>Price</th>
+                        <th>Shares</th>
+                        <th>Value</th>
+                        <th>Cash Reserves</th>
+                        <th>Price PnL</th>
+                        <th>Div Captured</th>
+                        <th>Total PnL</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+            </table>
+            """
         else:
             trades_html = "<p class='text-muted'>No trades executed.</p>"
+            trades_json = "[]"
 
         charts_html = ""
         plotly_scripts = ""
         if do_plots:
             charts_html = f"""
                 <div class="row">
-                    <div class="col-md-9"><div class="card"><div class="card-header bg-primary text-white">Equity Curve vs. Benchmarks</div><div class="card-body"><div id="equity-chart"></div></div></div></div>
+                    <div class="col-md-9"><div class="card"><div class="card-header bg-primary text-white">Equity, Cash & Benchmarks</div><div class="card-body"><div id="equity-chart"></div></div></div></div>
                     <div class="col-md-3"><div class="card"><div class="card-header bg-info text-white">Benchmark Comparison</div><div class="card-body p-0"><table class="table mb-0"><thead class="table-light"><tr><th>Benchmark</th><th>Return</th></tr></thead><tbody><tr class="table-primary"><td><strong>Strategy</strong></td><td style='color: {return_color}; font-weight: bold;'>{total_return_str}</td></tr>{bench_rows}</tbody></table></div></div></div>
                 </div>
                 <div class="row"><div class="col-12"><div class="card"><div class="card-header bg-danger text-white">Drawdown (%)</div><div class="card-body"><div id="drawdown-chart"></div></div></div></div></div>
@@ -437,33 +446,180 @@ class PortfolioEngine:
                     const eqData = {equity_data};
                     const ddData = {drawdown_json};
                     const dates = eqData.map(d => d.Date);
-                    const traces = [{{ x: dates, y: eqData.map(d => d.Equity), name: 'Our Strategy', type: 'scatter', mode: 'lines', line: {{ color: '#0d6efd', width: 3 }}, fill: 'tozeroy', fillcolor: 'rgba(13, 110, 253, 0.1)' }}];
+                    
+                    const traces = [
+                        {{ 
+                            x: dates, 
+                            y: eqData.map(d => d.Equity), 
+                            name: 'Total Portfolio Value', 
+                            type: 'scatter', 
+                            mode: 'lines', 
+                            line: {{ color: '#0d6efd', width: 3 }}, 
+                            fill: 'tozeroy', 
+                            fillcolor: 'rgba(13, 110, 253, 0.1)' 
+                        }},
+                        {{
+                            x: dates,
+                            y: eqData.map(d => d.Cash),
+                            name: 'Cash Reserves',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: {{ color: '#6c757d', width: 2, dash: 'dash' }},
+                        }}
+                    ];
+                    
                     const benchmarks = {list(summary.get("Benchmarks", {}).keys())};
-                    const colors = ['#6c757d', '#ffc107', '#198754', '#dc3545'];
-                    benchmarks.forEach((b, i) => {{ traces.push({{ x: dates, y: eqData.map(d => d[b]), name: b.replace('_', ' '), type: 'scatter', mode: 'lines', line: {{ color: colors[i % colors.length], width: 1.5, dash: 'dot' }} }}); }});
-                    Plotly.newPlot('equity-chart', traces, {{ margin: {{ t: 10, r: 10, b: 40, l: 60 }}, xaxis: {{ title: 'Date' }}, yaxis: {{ title: 'Portfolio Value ($)' }}, legend: {{ orientation: 'h', y: -0.2 }} }});
-                    Plotly.newPlot('drawdown-chart', [{{ x: dates, y: ddData.map(d => d.DrawdownPct), type: 'scatter', mode: 'lines', line: {{ color: '#dc3545', width: 1 }}, fill: 'tozeroy', fillcolor: 'rgba(220, 53, 69, 0.2)' }}], {{ margin: {{ t: 10, r: 10, b: 40, l: 60 }}, xaxis: {{ title: 'Date' }}, yaxis: {{ title: 'Drawdown (%)' }} }});
+                    const colors = ['#ffc107', '#198754', '#dc3545', '#6f42c1'];
+                    benchmarks.forEach((b, i) => {{ 
+                        traces.push({{ 
+                            x: dates, 
+                            y: eqData.map(d => d[b]), 
+                            name: b.replace('_', ' '), 
+                            type: 'scatter', 
+                            mode: 'lines', 
+                            line: {{ color: colors[i % colors.length], width: 1.5, dash: 'dot' }} 
+                        }}); 
+                    }});
+                    
+                    Plotly.newPlot('equity-chart', traces, {{ 
+                        margin: {{ t: 10, r: 10, b: 40, l: 60 }}, 
+                        xaxis: {{ title: 'Date' }}, 
+                        yaxis: {{ title: 'Value ($)' }}, 
+                        legend: {{ orientation: 'h', y: -0.2 }} 
+                    }});
+                    
+                    Plotly.newPlot('drawdown-chart', [{{ 
+                        x: dates, 
+                        y: ddData.map(d => d.DrawdownPct), 
+                        type: 'scatter', 
+                        mode: 'lines', 
+                        line: {{ color: '#dc3545', width: 1 }}, 
+                        fill: 'tozeroy', 
+                        fillcolor: 'rgba(220, 53, 69, 0.2)' 
+                    }}], {{ 
+                        margin: {{ t: 10, r: 10, b: 40, l: 60 }}, 
+                        xaxis: {{ title: 'Date' }}, 
+                        yaxis: {{ title: 'Drawdown (%)' }} 
+                    }});
                 </script>
             """
 
         html = f"""
-        <!DOCTYPE html><html><head><title>Dashboard</title><script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <style>body {{ background-color: #f8f9fa; padding: 20px; font-family: sans-serif; }} .metric-card {{ padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #dee2e6; }} .metric-value {{ font-size: 24px; font-weight: bold; color: #0d6efd; }} .metric-label {{ font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: bold; }} .card {{ margin-bottom: 20px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }} #equity-chart {{ height: 500px; }} #drawdown-chart {{ height: 300px; }} th, td {{ text-align: left !important; }} .table-container {{ background: white; border-radius: 8px; border: 1px solid #dee2e6; overflow: hidden; }} .table-success {{ background-color: #d1e7dd !important; }} .table-danger {{ background-color: #f8d7da !important; }}</style></head>
-        <body><div class="container-fluid"><h2>Portfolio Analysis Dashboard</h2><div class="card mb-4 border-0 bg-light"><div class="card-body"><div class="row"><div class="col-md-6"><h5 class="text-primary">{strategy_metadata["name"]}</h5><p class="mb-0 text-secondary">{strategy_metadata["description"]}</p></div><div class="col-md-3"><div class="small font-weight-bold text-uppercase text-muted">Period</div><div>{strategy_metadata["start_date"]} to {strategy_metadata["end_date"]}</div></div><div class="col-md-3"><div class="small font-weight-bold text-uppercase text-muted">Segment</div><div>{strategy_metadata["market_segment"]}</div></div></div></div></div>
-        <div class="row mb-4">
-            <div class="col-md-2"><div class="metric-card"><div class="metric-label">Initial</div><div class="metric-value">{initial_cash_str}</div></div></div>
-            <div class="col-md-3"><div class="metric-card"><div class="metric-label">Final</div><div class="metric-value">{final_equity_str}</div></div></div>
-            <div class="col-md-2"><div class="metric-card"><div class="metric-label">Return</div><div class="metric-value" style="color: {return_color}">{total_return_str}</div></div></div>
-            <div class="col-md-2"><div class="metric-card"><div class="metric-label">Drawdown</div><div class="metric-value" style="color: #dc3545">{max_drawdown_str}</div></div></div>
-            <div class="col-md-2"><div class="metric-card"><div class="metric-label">Trades</div><div class="metric-value">{total_trades_str}</div></div></div>
-        </div>
-        {charts_html}
-        <div class="row"><div class="col-12"><div class="card"><div class="card-header bg-dark text-white">Recent Trade Activity</div><div class="card-body"><div class="table-container">{trades_html}</div></div></div></div></div>
-        <div class="card mt-4"><div class="card-header bg-secondary text-white">Metrics Explanation</div><div class="card-body"><div class="row">
-            <div class="col-md-4"><strong>Max Drawdown</strong><p class="small text-muted">Largest peak-to-trough decline.</p></div>
-            <div class="col-md-4"><strong>Total Return</strong><p class="small text-muted">Growth of initial capital.</p></div>
-            <div class="col-md-4"><strong>Benchmarks</strong><p class="small text-muted">Comparison against S&P500 (SPY), Equal-Weight S&P500 (RSP), 5% CD, and 60/40 Portfolio.</p></div>
-        </div></div></div></div>{plotly_scripts}</body></html>
+        <!DOCTYPE html><html><head><title>Portfolio Dashboard</title>
+        <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+        <script type="text/javascript" language="javascript" src="https://code.jquery.com/jquery-3.7.0.js"></script>
+        <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        
+        <style>
+            body {{ background-color: #f8f9fa; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }} 
+            .metric-card {{ padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #dee2e6; }} 
+            .metric-value {{ font-size: 24px; font-weight: bold; color: #0d6efd; }} 
+            .metric-label {{ font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: bold; }} 
+            .card {{ margin-bottom: 20px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }} 
+            #equity-chart {{ height: 550px; }} 
+            #drawdown-chart {{ height: 300px; }} 
+            .table-container {{ background: white; border-radius: 8px; border: 1px solid #dee2e6; padding: 15px; }}
+            .table-success-row {{ background-color: #d1e7dd !important; }}
+            .table-danger-row {{ background-color: #f8d7da !important; }}
+            .dt-body-left {{ text-align: left; }}
+        </style>
+        </head>
+        <body>
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2>Portfolio Analysis Dashboard</h2>
+                    <span class="badge bg-secondary">Generated on {datetime.now().strftime("%Y-%m-%d %H:%M")}</span>
+                </div>
+                
+                <div class="card mb-4 border-0 bg-white shadow-sm">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-primary">{strategy_metadata["name"]}</h5>
+                                <p class="mb-0 text-secondary">{strategy_metadata["description"]}</p>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="small font-weight-bold text-uppercase text-muted">Period</div>
+                                <div>{strategy_metadata["start_date"]} to {strategy_metadata["end_date"]}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="small font-weight-bold text-uppercase text-muted">Segment</div>
+                                <div>{strategy_metadata["market_segment"]}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-2"><div class="metric-card"><div class="metric-label">Initial</div><div class="metric-value">{initial_cash_str}</div></div></div>
+                    <div class="col-md-3"><div class="metric-card"><div class="metric-label">Final Value</div><div class="metric-value">{final_equity_str}</div></div></div>
+                    <div class="col-md-2"><div class="metric-card"><div class="metric-label">Return</div><div class="metric-value" style="color: {return_color}">{total_return_str}</div></div></div>
+                    <div class="col-md-2"><div class="metric-card"><div class="metric-label">Max Drawdown</div><div class="metric-value" style="color: #dc3545">{max_drawdown_str}</div></div></div>
+                    <div class="col-md-2"><div class="metric-card"><div class="metric-label">Total Trades</div><div class="metric-value">{total_trades_str}</div></div></div>
+                </div>
+
+                {charts_html}
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white d-flex justify-content-between">
+                                <span>Full Trade History</span>
+                                <small>Showing all {len(trades_df)} trades</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-container">
+                                    {trades_html}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4"><div class="card-header bg-secondary text-white">Metrics Explanation</div><div class="card-body"><div class="row">
+                    <div class="col-md-4"><strong>Max Drawdown</strong><p class="small text-muted">Largest peak-to-trough decline.</p></div>
+                    <div class="col-md-4"><strong>Total Return</strong><p class="small text-muted">Growth of initial capital.</p></div>
+                    <div class="col-md-4"><strong>Benchmarks</strong><p class="small text-muted">Comparison against S&P500 (SPY), Equal-Weight S&P500 (RSP), 5% CD, and 60/40 Portfolio.</p></div>
+                </div></div></div>
+            </div>
+
+            {plotly_scripts}
+            
+            <script>
+                const tradesData = {trades_json};
+                
+                $(document).ready(function() {{
+                    $('#trades-table').DataTable({{
+                        data: tradesData,
+                        columns: [
+                            {{ data: 'Date' }},
+                            {{ data: 'Ticker' }},
+                            {{ data: 'Action' }},
+                            {{ data: 'Price', render: $.fn.dataTable.render.number(',', '.', 2, '$') }},
+                            {{ data: 'Shares' }},
+                            {{ data: 'Value', render: $.fn.dataTable.render.number(',', '.', 2, '$') }},
+                            {{ data: 'CashReserves', render: $.fn.dataTable.render.number(',', '.', 2, '$') }},
+                            {{ data: 'PricePnL', render: function(data) {{ return data ? '$' + data.toLocaleString() : '-'; }} }},
+                            {{ data: 'DivCaptured', render: function(data) {{ return data ? '$' + data.toLocaleString() : '-'; }} }},
+                            {{ data: 'TotalPnL', render: function(data) {{ return data ? '$' + data.toLocaleString() : '-'; }} }},
+                            {{ data: 'Reason' }}
+                        ],
+                        pageLength: 25,
+                        order: [[0, 'desc']],
+                        deferRender: true,
+                        createdRow: function(row, data, dataIndex) {{
+                            if (data.Action === 'SELL') {{
+                                $(row).addClass('table-success-row');
+                            }} else {{
+                                $(row).addClass('table-danger-row');
+                            }}
+                        }}
+                    }});
+                }});
+            </script>
+        </body></html>
         """
         with open(os.path.join(report_dir, "portfolio_dashboard.html"), "w") as f:
             f.write(html)
