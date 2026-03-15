@@ -162,7 +162,6 @@ class PortfolioEngine:
                             "Date": current_date,
                             "Ticker": t,
                             "Action": "DIVIDEND",
-                            "MarketCap": self.market_caps.get(t, 0),
                             "Price": div_per_share,
                             "Shares": info["shares"],
                             "Value": dividend_received,
@@ -197,7 +196,6 @@ class PortfolioEngine:
                             "Date": current_date,
                             "Ticker": t,
                             "Action": "SELL",
-                            "MarketCap": self.market_caps.get(t, 0),
                             "Price": price,
                             "Shares": shares,
                             "Value": proceeds,
@@ -241,7 +239,6 @@ class PortfolioEngine:
                                         "Date": current_date,
                                         "Ticker": t,
                                         "Action": "BUY",
-                                        "MarketCap": self.market_caps.get(t, 0),
                                         "Price": price,
                                         "Shares": shares,
                                         "Value": cost,
@@ -406,7 +403,6 @@ class PortfolioEngine:
                 "PricePnL",
                 "DivCaptured",
                 "TotalPnL",
-                "MarketCap",
             ]:
                 if col in all_trades.columns:
                     all_trades[col] = all_trades[col].apply(
@@ -418,7 +414,7 @@ class PortfolioEngine:
                     )
             all_trades["Date"] = all_trades["Date"].dt.strftime("%Y-%m-%d")
             trades_json = all_trades.to_json(orient="records")
-            trades_html = '<table id="trades-table" class="display table table-sm table-hover align-middle" style="width:100%"><thead><tr><th>Date</th><th>Ticker</th><th>Action</th><th>Market Cap</th><th>Price</th><th>Shares</th><th>Value</th><th>Cash Reserves</th><th>Price PnL</th><th>Div Captured</th><th>Total PnL</th><th>Reason</th></tr></thead></table>'
+            trades_html = '<table id="trades-table" class="display table table-sm table-hover align-middle" style="width:100%"><thead><tr><th>Date</th><th>Ticker</th><th>Action</th><th>Price</th><th>Shares</th><th>Value</th><th>Cash Reserves</th><th>Price PnL</th><th>Div Captured</th><th>Total PnL</th><th>Reason</th></tr></thead></table>'
         else:
             trades_html = "<p class='text-muted'>No trades executed.</p>"
             trades_json = "[]"
@@ -495,7 +491,6 @@ class PortfolioEngine:
                     data: tradesData,
                     columns: [
                         {{ data: 'Date' }}, {{ data: 'Ticker' }}, {{ data: 'Action' }},
-                        {{ data: 'MarketCap', render: function(data) {{ return data ? '$' + (data/1e9).toFixed(1) + 'B' : '-'; }} }},
                         {{ data: 'Price', render: $.fn.dataTable.render.number(',', '.', 2, '$') }},
                         {{ data: 'Shares' }},
                         {{ data: 'Value', render: $.fn.dataTable.render.number(',', '.', 2, '$') }},
