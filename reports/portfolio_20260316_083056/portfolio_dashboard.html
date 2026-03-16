@@ -1,0 +1,86 @@
+
+        <!DOCTYPE html><html><head><title>Portfolio Dashboard</title>
+        <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+        <script type="text/javascript" language="javascript" src="https://code.jquery.com/jquery-3.7.0.js"></script>
+        <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <style>
+            body { background-color: #f8f9fa; padding: 20px; font-family: sans-serif; } 
+            .metric-card { padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #dee2e6; } 
+            .metric-value { font-size: 24px; font-weight: bold; color: #0d6efd; } 
+            .metric-label { font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: bold; } 
+            .card { margin-bottom: 20px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); } 
+            #equity-chart { height: 550px; } #drawdown-chart { height: 300px; } 
+            .table-container { background: white; border-radius: 8px; border: 1px solid #dee2e6; padding: 15px; }
+            .table-success-row { background-color: #d1e7dd !important; }
+            .table-danger-row { background-color: #f8d7da !important; }
+            .table-info-row { background-color: #e0f2fe !important; }
+        </style>
+        </head>
+        <body><div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>Portfolio Analysis Dashboard</h2>
+                <span class="badge bg-secondary">Generated on 2026-03-16 08:30</span>
+            </div>
+            <div class="card mb-4 border-0 bg-white shadow-sm"><div class="card-body"><div class="row">
+                <div class="col-md-5"><h5 class="text-primary">Loyal Dividend Capture (7/7)</h5><p class="mb-0 text-secondary">Buys 7 days before ex-dividend date and sells 7 days after. Includes a Loyalty Rule: will not sell if the next dividend is already within 7 days, avoiding unnecessary churn on stocks with overlapping dividend windows.</p></div>
+                <div class="col-md-2"><div class="small text-uppercase text-muted fw-bold">Period</div><div>2025-01-02 to 2025-12-31</div></div>
+                <div class="col-md-2"><div class="small text-uppercase text-muted fw-bold">Segment</div><div>1 tickers</div></div>
+                <div class="col-md-3">
+                    <div class="small text-uppercase text-muted fw-bold">Reality Constraints</div>
+                    <div class="mt-1">
+                        <span class="badge bg-success">
+                            ✓ Survivorship Filter
+                        </span>
+                        <span class="badge bg-info text-dark ms-1" title="Simulated cost of not getting the perfect market price">
+                            Slippage: 0.05%
+                        </span>
+                        <span class="badge bg-secondary ms-1">
+                            IRA/401k
+                        </span>
+                        <span class="badge bg-dark ms-1" title="Using raw market prices without dividend-smoothing adjustments">
+                            Raw Prices (Unadjusted)
+                        </span>
+                    </div>
+                </div>
+            </div></div></div>
+            <div class="row mb-4">
+                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Initial</div><div class="metric-value">$100,000</div></div></div>
+                <div class="col-md-3"><div class="metric-card"><div class="metric-label">Final Value</div><div class="metric-value">$100,394.11</div></div></div>
+                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Return</div><div class="metric-value" style="color: green">0.39%</div></div></div>
+                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Max Drawdown</div><div class="metric-value" style="color: #dc3545">-0.21%</div></div></div>
+                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Total Trades</div><div class="metric-value">12</div></div></div>
+            </div>
+            
+            <div class="row"><div class="col-12"><div class="card"><div class="card-header bg-dark text-white d-flex justify-content-between"><span>Full Transaction History</span><small>Showing all 12 entries</small></div><div class="card-body"><div class="table-container"><table id="trades-table" class="display table table-sm table-hover align-middle" style="width:100%"><thead><tr><th>Date</th><th>Ticker</th><th>Action</th><th>Price</th><th>Shares</th><th>Value</th><th>Cash Reserves</th><th>Price PnL</th><th>Div Captured</th><th>Total PnL</th><th>Reason</th></tr></thead></table></div></div></div></div></div>
+            <div class="card mt-4"><div class="card-header bg-secondary text-white">Metrics Explanation</div><div class="card-body"><div class="row"><div class="col-md-4"><strong>Max Drawdown</strong><p class="small text-muted">Largest peak-to-trough decline.</p></div><div class="col-md-4"><strong>Total Return</strong><p class="small text-muted">Growth of initial capital.</p></div><div class="col-md-4"><strong>Benchmarks</strong><p class="small text-muted">Comparison against S&P500 (SPY), Equal-Weight S&P500 (RSP), 5% CD, and 60/40 Portfolio.</p></div></div></div></div>
+        </div>
+        
+        <script>
+            const tradesData = [{"Date":"2025-11-24","Ticker":"UPS","Action":"SELL","Price":93.51,"Shares":53,"Value":4956.2,"CashReserves":100394.11,"PricePnL":21.55,"DivCaptured":86.92,"TotalPnL":108.47,"Reason":"7 days post-div"},{"Date":"2025-11-17","Ticker":"UPS","Action":"DIVIDEND","Price":1.64,"Shares":53,"Value":86.92,"CashReserves":95437.91,"PricePnL":null,"DivCaptured":86.92,"TotalPnL":86.92,"Reason":"Dividend Payment"},{"Date":"2025-11-10","Ticker":"UPS","Action":"BUY","Price":93.11,"Shares":53,"Value":4934.65,"CashReserves":95350.99,"PricePnL":null,"DivCaptured":0.0,"TotalPnL":null,"Reason":"Div in 7 days"},{"Date":"2025-08-25","Ticker":"UPS","Action":"SELL","Price":87.7,"Shares":57,"Value":4998.68,"CashReserves":100285.64,"PricePnL":76.55,"DivCaptured":93.48,"TotalPnL":170.03,"Reason":"7 days post-div"},{"Date":"2025-08-18","Ticker":"UPS","Action":"DIVIDEND","Price":1.64,"Shares":57,"Value":93.48,"CashReserves":95286.96,"PricePnL":null,"DivCaptured":93.48,"TotalPnL":93.48,"Reason":"Dividend Payment"},{"Date":"2025-08-11","Ticker":"UPS","Action":"BUY","Price":86.35,"Shares":57,"Value":4922.13,"CashReserves":95193.48,"PricePnL":null,"DivCaptured":0.0,"TotalPnL":null,"Reason":"Div in 7 days"},{"Date":"2025-05-27","Ticker":"UPS","Action":"SELL","Price":97.5,"Shares":49,"Value":4777.56,"CashReserves":100115.61,"PricePnL":-184.21,"DivCaptured":80.36,"TotalPnL":-103.85,"Reason":"7 days post-div"},{"Date":"2025-05-19","Ticker":"UPS","Action":"DIVIDEND","Price":1.64,"Shares":49,"Value":80.36,"CashReserves":95338.05,"PricePnL":null,"DivCaptured":80.36,"TotalPnL":80.36,"Reason":"Dividend Payment"},{"Date":"2025-05-12","Ticker":"UPS","Action":"BUY","Price":101.26,"Shares":49,"Value":4961.77,"CashReserves":95257.69,"PricePnL":null,"DivCaptured":0.0,"TotalPnL":null,"Reason":"Div in 7 days"},{"Date":"2025-02-25","Ticker":"UPS","Action":"SELL","Price":118.05,"Shares":43,"Value":5076.19,"CashReserves":100219.46,"PricePnL":148.94,"DivCaptured":70.52,"TotalPnL":219.46,"Reason":"7 days post-div"},{"Date":"2025-02-18","Ticker":"UPS","Action":"DIVIDEND","Price":1.64,"Shares":43,"Value":70.52,"CashReserves":95143.27,"PricePnL":null,"DivCaptured":70.52,"TotalPnL":70.52,"Reason":"Dividend Payment"},{"Date":"2025-02-11","Ticker":"UPS","Action":"BUY","Price":114.59,"Shares":43,"Value":4927.25,"CashReserves":95072.75,"PricePnL":null,"DivCaptured":0.0,"TotalPnL":null,"Reason":"Div in 7 days"}];
+            $(document).ready(function() {
+                $('#trades-table').DataTable({
+                    data: tradesData,
+                    columns: [
+                        { data: 'Date' }, { data: 'Ticker' }, { data: 'Action' },
+                        { data: 'Price', render: $.fn.dataTable.render.number(',', '.', 2, '$') },
+                        { data: 'Shares' },
+                        { data: 'Value', render: $.fn.dataTable.render.number(',', '.', 2, '$') },
+                        { data: 'CashReserves', render: $.fn.dataTable.render.number(',', '.', 2, '$') },
+                        { data: 'PricePnL', render: function(data) { return data ? '$' + data.toLocaleString(undefined, {minimumFractionDigits: 2}) : '-'; } },
+                        { data: 'DivCaptured', render: function(data) { return data ? '$' + data.toLocaleString(undefined, {minimumFractionDigits: 2}) : '-'; } },
+                        { data: 'TotalPnL', render: function(data) { return data ? '$' + data.toLocaleString(undefined, {minimumFractionDigits: 2}) : '-'; } },
+                        { data: 'Reason' }
+                    ],
+                    pageLength: 25, order: [[0, 'desc']], deferRender: true,
+                    createdRow: function(row, data, dataIndex) {
+                        if (data.Action === 'SELL') $(row).addClass('table-success-row');
+                        else if (data.Action === 'BUY') $(row).addClass('table-danger-row');
+                        else if (data.Action === 'DIVIDEND') $(row).addClass('table-info-row');
+                    }
+                });
+            });
+        </script>
+        </body></html>
+        
