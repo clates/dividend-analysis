@@ -57,10 +57,8 @@ def run_stratified():
             continue
 
         config = base_config.copy()
-        # Ensure we use ALL but filtered by the engine call if we wanted to re-filter,
-        # but we already have the matrices.
-        # Actually, if we pass matrices, the engine currently uses the full matrix.
-        # We need to slice the matrices for the segment.
+        # Use the optimal B35/S45 strategy found in the sweep
+        config["strategy_params"] = {"buy_before": 35, "sell_after": 45}
 
         # Slicing matrices
         seg_price_matrix = engine_setup.price_matrix[seg_tickers]
