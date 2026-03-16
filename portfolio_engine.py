@@ -537,6 +537,9 @@ class PortfolioEngine:
                         <span class="badge bg-secondary ms-1">
                             {"IRA/401k" if strategy_metadata.get("account_type") == "tax_advantaged" else "Taxable"}
                         </span>
+                        <span class="badge bg-dark ms-1" title="Using raw market prices without dividend-smoothing adjustments">
+                            Raw Prices (Unadjusted)
+                        </span>
                     </div>
                 </div>
             </div></div></div>

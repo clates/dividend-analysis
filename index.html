@@ -13,41 +13,47 @@
         <h1 class="mb-2">Dividend Analysis Reports</h1>
         <p class="lead text-muted mb-3">Historical backtesting of dividend capture strategies across the S&P 500.</p>
 
-        <div class="alert alert-success py-2">
-            <strong>Reality Constraints Active:</strong>
+        <div class="alert alert-danger py-2">
+            <strong>⚠️ Reality Check Phase Complete:</strong>
+            Previous "Too Good to be True" results were due to adjusted price bias (double-counting). 
+            These new reports use <strong>Raw Market Prices (Unadjusted)</strong> and include <strong>Market Friction (Slippage)</strong>.
+        </div>
+
+        <div class="alert alert-success py-2 small">
+            <strong>Current Constraints:</strong>
             Survivorship Bias Filter &bull; Slippage 0.05% per trade &bull; IRA/401(k) Tax-Advantaged
         </div>
 
         <div class="list-group mb-3">
-            <div class="fw-bold text-muted text-uppercase small mt-2 mb-1">Latest Runs (With Reality Constraints)</div>
-            <a href="reports/portfolio_20260315_180225/portfolio_dashboard.html" class="list-group-item list-group-item-action list-group-item-warning">
-                <strong>🚀 Optimal Strategy — B5/S5</strong>
-                <br><small>+3,669% return with survivorship filter &amp; slippage applied</small>
+            <div class="fw-bold text-muted text-uppercase small mt-2 mb-1">Featured Scenarios</div>
+            <a href="reports/portfolio_20260316_082558/portfolio_dashboard.html" class="list-group-item list-group-item-action list-group-item-warning">
+                <strong>🚀 New Optimal Strategy — B35/S45</strong>
+                <br><small>+395% return (Still beating SPY at +287%) · Longer hold window allows for "Dividend Drop" recovery.</small>
             </a>
-            <a href="reports/portfolio_20260315_180441/portfolio_dashboard.html" class="list-group-item list-group-item-action list-group-item-success mt-1">
-                <strong>✨ Standard Dashboard — B30/S30</strong>
-                <br><small>+572% return · Full transaction history · Explicit dividend rows</small>
+            <a href="reports/portfolio_20260316_082624/portfolio_dashboard.html" class="list-group-item list-group-item-action list-group-item-success mt-1">
+                <strong>✨ Standard Strategy — B30/S30</strong>
+                <br><small>+324% return · Realistic accounting with explicit dividend logs.</small>
             </a>
             <a href="reports/sweep_summary.html" class="list-group-item list-group-item-action list-group-item-primary mt-1">
-                <strong>📈 Full Parameter Sweep (144 Permutations)</strong>
-                <br><small>5–60 day buy/sell windows in 5-day increments</small>
+                <strong>📈 Full Parameter Sweep Summary (144 Runs)</strong>
+                <br><small>See how different buy/sell timings affect performance in a realistic market.</small>
             </a>
         </div>
 
         <div class="list-group mb-3">
-            <div class="fw-bold text-muted text-uppercase small mt-2 mb-1">Stratified Market Cap Analysis</div>
-            <a href="reports/portfolio_20260315_093813/portfolio_dashboard.html" class="list-group-item list-group-item-action">
+            <div class="fw-bold text-muted text-uppercase small mt-2 mb-1">Market Cap Segment Analysis</div>
+            <a href="reports/portfolio_20260316_082424/portfolio_dashboard.html" class="list-group-item list-group-item-action">
                 <strong>💎 Mega Cap Only</strong> <span class="text-muted">— 38 tickers · Market Cap &gt; $200B</span>
             </a>
-            <a href="reports/portfolio_20260315_093814/portfolio_dashboard.html" class="list-group-item list-group-item-action">
+            <a href="reports/portfolio_20260316_082426/portfolio_dashboard.html" class="list-group-item list-group-item-action">
                 <strong>💎 Large Cap and Up</strong> <span class="text-muted">— 174 tickers · Market Cap &gt; $50B</span>
             </a>
-            <a href="reports/portfolio_20260315_093815/portfolio_dashboard.html" class="list-group-item list-group-item-action">
+            <a href="reports/portfolio_20260316_082431/portfolio_dashboard.html" class="list-group-item list-group-item-action">
                 <strong>💎 Mid-Large Cap and Up</strong> <span class="text-muted">— 365 tickers · Market Cap &gt; $10B</span>
             </a>
         </div>
 
-        <p class="mt-3 text-muted small text-center">Last updated: 2026-03-15</p>
+        <p class="mt-3 text-muted small text-center">Last updated: 2026-03-16</p>
     </div>
 </body>
 </html>

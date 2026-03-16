@@ -42,7 +42,12 @@ def download_data(ticker, period="10y"):
 
     try:
         data = yf.download(
-            ticker, period=period, interval="1d", progress=False, actions=True
+            ticker,
+            period=period,
+            interval="1d",
+            progress=False,
+            actions=True,
+            auto_adjust=False,
         )
         if not data.empty:
             data.to_parquet(filepath)
