@@ -24,18 +24,15 @@ class PortfolioEngine:
         self.slippage_pct = config.get("slippage_pct", 0.0)
         self.account_type = config.get("account_type", "tax_advantaged")
 
-        # Portfolio Rules
         self.rules = config.get("portfolio_rules", {})
         self.max_positions = self.rules.get("max_active_positions", 20)
         self.max_pos_size_pct = self.rules.get("max_position_size_pct", 0.05)
 
-        # Pre-loaded matrices (if provided)
         self.price_matrix = price_matrix
         self.div_matrix = div_matrix
         self.to_div_matrix = to_div_matrix
         self.since_div_matrix = since_div_matrix
 
-        # Historical index constituents for survivorship bias mitigation
         self.historical_constituents = {}
         constituents_path = "data/historical_constituents.json"
         if os.path.exists(constituents_path):
@@ -45,14 +42,8 @@ class PortfolioEngine:
                 f"Loaded historical constituents ({len(self.historical_constituents)} snapshots).",
                 flush=True,
             )
-        else:
-            print(
-                "WARNING: historical_constituents.json not found. No survivorship bias filtering.",
-                flush=True,
-            )
 
-        # Accounting
-        self.holdings = {}  # {ticker: {'shares': 10, 'entry_price': 100, 'captured_dividends': 0.0}}
+        self.holdings = {}
         self.equity_history = []
         self.trade_log = []
 
@@ -60,20 +51,17 @@ class PortfolioEngine:
         print(f"Loading market data for {len(tickers)} tickers...", flush=True)
         all_prices = {}
         all_divs = {}
-
         for t in tickers:
             df = self.dm.get_ticker_data(t)
             if df is not None:
                 all_prices[t] = df["Close"]
                 if "Dividends" in df.columns:
                     all_divs[t] = df["Dividends"]
-
         print("Pivoting data...", flush=True)
         self.price_matrix = pd.DataFrame(all_prices).ffill()
         self.div_matrix = (
             pd.DataFrame(all_divs).reindex(self.price_matrix.index).fillna(0)
         )
-
         print("Calculating dividend indicators (vectorized)...", flush=True)
         self.to_div_matrix = pd.DataFrame(
             index=self.price_matrix.index, columns=self.price_matrix.columns
@@ -81,20 +69,16 @@ class PortfolioEngine:
         self.since_div_matrix = pd.DataFrame(
             index=self.price_matrix.index, columns=self.price_matrix.columns
         ).fillna(999.0)
-
         for t in self.div_matrix.columns:
             div_series = self.div_matrix[t]
             div_dates = div_series.index[div_series > 0]
             if not div_dates.empty:
                 for d in div_dates:
-                    # Days Since
                     diff_since = (self.price_matrix.index - d).days
                     mask_since = (diff_since >= 0) & (
                         diff_since < self.since_div_matrix[t]
                     )
                     self.since_div_matrix.loc[mask_since, t] = diff_since[mask_since]
-
-                    # Days To
                     diff_to = (d - self.price_matrix.index).days
                     mask_to = (diff_to >= 0) & (diff_to < self.to_div_matrix[t])
                     self.to_div_matrix.loc[mask_to, t] = diff_to[mask_to]
@@ -102,36 +86,26 @@ class PortfolioEngine:
     def run(self, tickers=None, do_plots=True):
         if self.price_matrix is None:
             if tickers is None:
-                raise ValueError("No data loaded and no tickers provided.")
+                raise ValueError("No data loaded")
             self.prepare_data(tickers)
-        else:
-            if tickers:
-                print(
-                    f"Using pre-loaded market data ({len(self.price_matrix.columns)} tickers).",
-                    flush=True,
-                )
 
         price_matrix = self.price_matrix
         div_matrix = self.div_matrix
         to_div_matrix = self.to_div_matrix
         since_div_matrix = self.since_div_matrix
-
         sorted_dates = price_matrix.index.sort_values()
         print(f"Simulating {len(sorted_dates)} trading days...", flush=True)
 
-        # Load Strategy
         from strategies.loyal_dividend_portfolio_strategy import (
             LoyalDividendPortfolioStrategy,
         )
         from strategies.dividend_portfolio_strategy import DividendPortfolioStrategy
 
-        # Extract strategy parameters from config
         strat_params = self.config.get(
             "strategy_params", {"buy_before": 30, "sell_after": 30}
         )
         buy_before = strat_params.get("buy_before", 30)
         sell_after = strat_params.get("sell_after", 30)
-
         strat_name = self.config.get("strategy", "LoyalDividendPortfolioStrategy")
         if strat_name == "LoyalDividendPortfolioStrategy":
             strategy = LoyalDividendPortfolioStrategy(
@@ -144,8 +118,8 @@ class PortfolioEngine:
 
         use_constituents = bool(self.historical_constituents)
         strategy_metadata = {
-            "name": getattr(strategy, "name", "Unknown Strategy"),
-            "description": getattr(strategy, "description", "No description provided."),
+            "name": getattr(strategy, "name", "Unknown"),
+            "description": getattr(strategy, "description", ""),
             "start_date": pd.to_datetime(sorted_dates[0]).strftime("%Y-%m-%d"),
             "end_date": pd.to_datetime(sorted_dates[-1]).strftime("%Y-%m-%d"),
             "market_segment": "S&P 500"
@@ -157,15 +131,12 @@ class PortfolioEngine:
         }
 
         total_divs_collected = 0
-        # Cache current constituents to avoid repeated lookups
         current_constituents = set()
         last_constituents_date = ""
 
         for i, current_date in enumerate(sorted_dates):
             if i % 250 == 0:
                 print(f"Progress: {i}/{len(sorted_dates)} days...", flush=True)
-
-            # Update constituents snapshot monthly (first trading day of each month)
             date_str = pd.to_datetime(current_date).strftime("%Y-%m-%d")
             if use_constituents and date_str[:7] != last_constituents_date:
                 current_constituents = get_constituents_for_date(
@@ -178,22 +149,17 @@ class PortfolioEngine:
             row_since_div = since_div_matrix.loc[current_date]
             row_div_amounts = div_matrix.loc[current_date]
 
-            # 1. Update Portfolio Valuation and Collect Dividends
             total_holdings_value = 0
             for t, info in self.holdings.items():
                 price = row_prices[t]
                 if not np.isnan(price):
                     total_holdings_value += price * info["shares"]
-
-                # Check for dividend today
                 div_per_share = row_div_amounts[t]
                 if div_per_share > 0:
                     dividend_received = div_per_share * info["shares"]
                     self.cash += dividend_received
                     info["captured_dividends"] += dividend_received
                     total_divs_collected += dividend_received
-
-                    # Log dividend receipt
                     self.trade_log.append(
                         {
                             "Date": current_date,
@@ -215,27 +181,18 @@ class PortfolioEngine:
                 {"Date": current_date, "Equity": current_equity, "Cash": self.cash}
             )
 
-            # 2. Ask the strategy for today's signals
             signals = strategy.get_signals(
-                current_date,
-                set(self.holdings.keys()),
-                row_to_div,
-                row_since_div,
+                current_date, set(self.holdings.keys()), row_to_div, row_since_div
             )
 
-            # 3. Execute SELLS
             for t in signals.get("sell", []):
                 if t in self.holdings:
-                    price = row_prices[t]
+                    price = row_prices[t] * (1 - self.slippage_pct)
                     shares = self.holdings[t]["shares"]
                     entry_price = self.holdings[t]["entry_price"]
                     captured_divs = self.holdings[t]["captured_dividends"]
-
-                    # Apply slippage to sell price (receive slightly less)
-                    price = price * (1 - self.slippage_pct)
                     price_pnl = (price - entry_price) * shares
                     total_pnl = price_pnl + captured_divs
-
                     proceeds = shares * price * (1 - self.commission)
                     self.cash += proceeds
                     self.trade_log.append(
@@ -255,27 +212,18 @@ class PortfolioEngine:
                     )
                     del self.holdings[t]
 
-            # 4. Execute BUYS
             if len(self.holdings) < self.max_positions:
                 for t in signals.get("buy", []):
                     if len(self.holdings) >= self.max_positions:
                         break
-
-                    # Survivorship bias filter: only buy if ticker was in index on this date
                     if use_constituents and t not in current_constituents:
                         continue
-
                     if t not in self.holdings and not np.isnan(row_prices[t]):
-                        # Apply slippage to buy price (pay slightly more)
-                        raw_price = row_prices[t]
-                        price = raw_price * (1 + self.slippage_pct)
-                        target_investment = current_equity * self.max_pos_size_pct
-                        actual_investment = min(target_investment, self.cash)
-
-                        if actual_investment > price:
-                            shares = int(
-                                actual_investment // (price * (1 + self.commission))
-                            )
+                        price = row_prices[t] * (1 + self.slippage_pct)
+                        target_inv = current_equity * self.max_pos_size_pct
+                        actual_inv = min(target_inv, self.cash)
+                        if actual_inv > price:
+                            shares = int(actual_inv // (price * (1 + self.commission)))
                             if shares > 0:
                                 cost = shares * price * (1 + self.commission)
                                 self.cash -= cost
@@ -330,24 +278,27 @@ class PortfolioEngine:
 
         final_equity = self.equity_history[-1]["Equity"]
         initial_cash = self.config["initial_cash"]
-        total_return = (final_equity / initial_cash - 1) * 100
-        max_drawdown = equity_df["DrawdownPct"].min()
+        total_profit = final_equity - initial_cash
 
-        benchmark_stats = {}
-        for col in benchmarks_df.columns:
-            if col == "Date":
-                continue
-            final_bench = equity_df[col].iloc[-1]
-            bench_return = (final_bench / initial_cash - 1) * 100
-            benchmark_stats[col] = round(bench_return, 2)
+        # Calculate Dividend vs Appreciation Return
+        div_trades = trades_df[trades_df["Action"] == "DIVIDEND"]
+        total_divs = div_trades["Value"].sum() if not div_trades.empty else 0
 
         summary = {
             "Initial Cash": initial_cash,
             "Final Equity": round(final_equity, 2),
-            "Total Return %": round(total_return, 2),
-            "Max Drawdown %": round(max_drawdown, 2),
+            "Total Return %": round((final_equity / initial_cash - 1) * 100, 2),
+            "Dividend Return %": round((total_divs / initial_cash) * 100, 2),
+            "Appreciation Return %": round(
+                ((total_profit - total_divs) / initial_cash) * 100, 2
+            ),
+            "Max Drawdown %": round(equity_df["DrawdownPct"].min(), 2),
             "Total Trades": len(self.trade_log),
-            "Benchmarks": benchmark_stats,
+            "Benchmarks": {
+                col: round((equity_df[col].iloc[-1] / initial_cash - 1) * 100, 2)
+                for col in benchmarks_df.columns
+                if col != "Date"
+            },
         }
 
         with open(os.path.join(report_dir, "portfolio_summary.json"), "w") as f:
@@ -373,8 +324,9 @@ class PortfolioEngine:
             data = self.dm.get_ticker_data(ticker)
             if data is not None:
                 data.index = pd.to_datetime(data.index).normalize()
-                norm_dates = pd.to_datetime(dates).dt.normalize()
-                joined = data.reindex(norm_dates).ffill().bfill()
+                joined = (
+                    data.reindex(pd.to_datetime(dates).dt.normalize()).ffill().bfill()
+                )
                 returns = joined["Close"].pct_change().fillna(0)
                 if "Dividends" in joined.columns:
                     returns += (joined["Dividends"] / joined["Close"]).fillna(0)
@@ -392,9 +344,9 @@ class PortfolioEngine:
                         joined_agg["Dividends"] / joined_agg["Close"]
                     ).fillna(0)
                 spy_returns = bench_df["S&P500_SPY"].pct_change().fillna(0).values
-                balanced_returns = 0.6 * spy_returns + 0.4 * agg_returns.values
                 bench_df["Balanced_60_40"] = (
-                    initial_cash * (1 + balanced_returns).cumprod()
+                    initial_cash
+                    * (1 + 0.6 * spy_returns + 0.4 * agg_returns.values).cumprod()
                 )
         return bench_df
 
@@ -410,6 +362,8 @@ class PortfolioEngine:
         initial_cash_str = f"${summary['Initial Cash']:,.0f}"
         final_equity_str = f"${summary['Final Equity']:,.2f}"
         total_return_str = f"{summary['Total Return %']}%"
+        div_return_str = f"{summary['Dividend Return %']}%"
+        appr_return_str = f"{summary['Appreciation Return %']}%"
         max_drawdown_str = f"{summary['Max Drawdown %']}%"
         total_trades_str = str(summary["Total Trades"])
         return_color = "green" if summary["Total Return %"] >= 0 else "red"
@@ -433,9 +387,9 @@ class PortfolioEngine:
         equity_json_df = equity_df[equity_cols].copy()
         equity_json_df["Date"] = equity_json_df["Date"].dt.strftime("%Y-%m-%d")
         equity_data = equity_json_df.to_json(orient="records")
-        drawdown_data = equity_df[["Date", "DrawdownPct"]].copy()
-        drawdown_data["Date"] = drawdown_data["Date"].dt.strftime("%Y-%m-%d")
-        drawdown_json = drawdown_data.to_json(orient="records")
+        drawdown_json = equity_df[["Date", "DrawdownPct"]].copy()
+        drawdown_json["Date"] = drawdown_json["Date"].dt.strftime("%Y-%m-%d")
+        drawdown_json = drawdown_json.to_json(orient="records")
 
         bench_rows = "".join(
             [
@@ -497,62 +451,32 @@ class PortfolioEngine:
             """
 
         html = f"""
-        <!DOCTYPE html><html><head><title>Portfolio Dashboard</title>
+        <!DOCTYPE html><html><head><title>Dashboard</title>
         <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
         <script type="text/javascript" language="javascript" src="https://code.jquery.com/jquery-3.7.0.js"></script>
         <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-        <style>
-            body {{ background-color: #f8f9fa; padding: 20px; font-family: sans-serif; }} 
-            .metric-card {{ padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #dee2e6; }} 
-            .metric-value {{ font-size: 24px; font-weight: bold; color: #0d6efd; }} 
-            .metric-label {{ font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: bold; }} 
-            .card {{ margin-bottom: 20px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }} 
-            #equity-chart {{ height: 550px; }} #drawdown-chart {{ height: 300px; }} 
-            .table-container {{ background: white; border-radius: 8px; border: 1px solid #dee2e6; padding: 15px; }}
-            .table-success-row {{ background-color: #d1e7dd !important; }}
-            .table-danger-row {{ background-color: #f8d7da !important; }}
-            .table-info-row {{ background-color: #e0f2fe !important; }}
-        </style>
-        </head>
+        <style>body {{ background-color: #f8f9fa; padding: 20px; font-family: sans-serif; }} .metric-card {{ padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #dee2e6; }} .metric-value {{ font-size: 24px; font-weight: bold; color: #0d6efd; }} .metric-label {{ font-size: 12px; color: #6c757d; text-transform: uppercase; font-weight: bold; }} .card {{ margin-bottom: 20px; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }} #equity-chart {{ height: 550px; }} #drawdown-chart {{ height: 300px; }} th, td {{ text-align: left !important; }} .table-container {{ background: white; border-radius: 8px; border: 1px solid #dee2e6; padding: 15px; }} .table-success-row {{ background-color: #d1e7dd !important; }} .table-danger-row {{ background-color: #f8d7da !important; }} .table-info-row {{ background-color: #e0f2fe !important; }}</style></head>
         <body><div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2>Portfolio Analysis Dashboard</h2>
-                <span class="badge bg-secondary">Generated on {datetime.now().strftime("%Y-%m-%d %H:%M")}</span>
-            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3"><h2>Portfolio Analysis Dashboard</h2><span class="badge bg-secondary">Generated on {datetime.now().strftime("%Y-%m-%d %H:%M")}</span></div>
             <div class="card mb-4 border-0 bg-white shadow-sm"><div class="card-body"><div class="row">
                 <div class="col-md-5"><h5 class="text-primary">{strategy_metadata["name"]}</h5><p class="mb-0 text-secondary">{strategy_metadata["description"]}</p></div>
                 <div class="col-md-2"><div class="small text-uppercase text-muted fw-bold">Period</div><div>{strategy_metadata["start_date"]} to {strategy_metadata["end_date"]}</div></div>
                 <div class="col-md-2"><div class="small text-uppercase text-muted fw-bold">Segment</div><div>{strategy_metadata["market_segment"]}</div></div>
-                <div class="col-md-3">
-                    <div class="small text-uppercase text-muted fw-bold">Reality Constraints</div>
-                    <div class="mt-1">
-                        <span class="badge {"bg-success" if strategy_metadata.get("survivorship_filter") else "bg-warning text-dark"}">
-                            {"✓ Survivorship Filter" if strategy_metadata.get("survivorship_filter") else "⚠ No Survivorship Filter"}
-                        </span>
-                        <span class="badge bg-info text-dark ms-1" title="Simulated cost of not getting the perfect market price">
-                            Slippage: {strategy_metadata.get("slippage_pct", 0) * 100:.2f}%
-                        </span>
-                        <span class="badge bg-secondary ms-1">
-                            {"IRA/401k" if strategy_metadata.get("account_type") == "tax_advantaged" else "Taxable"}
-                        </span>
-                        <span class="badge bg-dark ms-1" title="Using raw market prices without dividend-smoothing adjustments">
-                            Raw Prices (Unadjusted)
-                        </span>
-                    </div>
-                </div>
+                <div class="col-md-3"><div class="small text-uppercase text-muted fw-bold">Reality Constraints</div><div class="mt-1"><span class="badge {"bg-success" if strategy_metadata.get("survivorship_filter") else "bg-warning text-dark"}">{"✓ Survivorship Filter" if strategy_metadata.get("survivorship_filter") else "⚠ No Survivorship Filter"}</span><span class="badge bg-info text-dark ms-1">Slippage: {strategy_metadata.get("slippage_pct", 0) * 100:.2f}%</span><span class="badge bg-secondary ms-1">{"IRA/401k" if strategy_metadata.get("account_type") == "tax_advantaged" else "Taxable"}</span><span class="badge bg-dark ms-1">Raw Prices</span></div></div>
             </div></div></div>
             <div class="row mb-4">
                 <div class="col-md-2"><div class="metric-card"><div class="metric-label">Initial</div><div class="metric-value">{initial_cash_str}</div></div></div>
-                <div class="col-md-3"><div class="metric-card"><div class="metric-label">Final Value</div><div class="metric-value">{final_equity_str}</div></div></div>
-                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Return</div><div class="metric-value" style="color: {return_color}">{total_return_str}</div></div></div>
-                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Max Drawdown</div><div class="metric-value" style="color: #dc3545">{max_drawdown_str}</div></div></div>
-                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Total Trades</div><div class="metric-value">{total_trades_str}</div></div></div>
+                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Final Value</div><div class="metric-value">{final_equity_str}</div></div></div>
+                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Total Return</div><div class="metric-value" style="color: {return_color}">{total_return_str}</div></div></div>
+                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Dividend Return</div><div class="metric-value" style="color: green">{div_return_str}</div></div></div>
+                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Appreciation</div><div class="metric-value" style="color: {return_color}">{appr_return_str}</div></div></div>
+                <div class="col-md-2"><div class="metric-card"><div class="metric-label">Drawdown</div><div class="metric-value" style="color: #dc3545">{max_drawdown_str}</div></div></div>
             </div>
             {charts_html}
             <div class="row"><div class="col-12"><div class="card"><div class="card-header bg-dark text-white d-flex justify-content-between"><span>Full Transaction History</span><small>Showing all {len(trades_df)} entries</small></div><div class="card-body"><div class="table-container">{trades_html}</div></div></div></div></div>
-            <div class="card mt-4"><div class="card-header bg-secondary text-white">Metrics Explanation</div><div class="card-body"><div class="row"><div class="col-md-4"><strong>Max Drawdown</strong><p class="small text-muted">Largest peak-to-trough decline.</p></div><div class="col-md-4"><strong>Total Return</strong><p class="small text-muted">Growth of initial capital.</p></div><div class="col-md-4"><strong>Benchmarks</strong><p class="small text-muted">Comparison against S&P500 (SPY), Equal-Weight S&P500 (RSP), 5% CD, and 60/40 Portfolio.</p></div></div></div></div>
+            <div class="card mt-4"><div class="card-header bg-secondary text-white">Metrics Explanation</div><div class="card-body"><div class="row"><div class="col-md-4"><strong>Max Drawdown</strong><p class="small text-muted">Largest peak-to-trough decline.</p></div><div class="col-md-4"><strong>Dividend Return</strong><p class="small text-muted">Gains purely from dividend cash payments.</p></div><div class="col-md-4"><strong>Appreciation</strong><p class="small text-muted">Gains from stock price changes (includes slippage & commission impact).</p></div></div></div></div>
         </div>
         {plotly_scripts}
         <script>
