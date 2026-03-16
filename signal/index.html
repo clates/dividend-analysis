@@ -33,14 +33,14 @@
                     <div class="col-md-3">
                         <div class="metric-card">
                             <div class="metric-label">Portfolio Value</div>
-                            <div class="metric-value">$10,000.00</div>
+                            <div class="metric-value">$9,998.04</div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="metric-card">
                             <div class="metric-label">Total Return</div>
-                            <div class="metric-value" style="color: green">
-                                +0.00%
+                            <div class="metric-value" style="color: red">
+                                -0.02%
                             </div>
                             <small class="text-muted">since 2026-03-16</small>
                         </div>
@@ -48,13 +48,13 @@
                     <div class="col-md-3">
                         <div class="metric-card">
                             <div class="metric-label">Cash Reserves</div>
-                            <div class="metric-value text-secondary">$10,000.00</div>
+                            <div class="metric-value text-secondary">$6,072.59</div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="metric-card">
                             <div class="metric-label">Positions</div>
-                            <div class="metric-value">0<span class="text-muted fs-5">/20</span></div>
+                            <div class="metric-value">10<span class="text-muted fs-5">/20</span></div>
                         </div>
                     </div>
                 </div>
@@ -74,9 +74,153 @@
                             <div class="card-header bg-dark text-white">📅 Upcoming Dividends (7 days)</div>
                             <div class="card-body" style="max-height: 350px; overflow-y: auto;">
                                 <ul class="list-group list-group-flush">
-                                
+                                <li class="list-group-item small">{'ticker': 'PM', 'days_to_div': 2, 'held': True, 'in_window': True}</li><li class="list-group-item small">{'ticker': 'WMT', 'days_to_div': 3, 'held': True, 'in_window': True}</li><li class="list-group-item small">{'ticker': 'META', 'days_to_div': 3, 'held': False, 'in_window': True}</li><li class="list-group-item small">{'ticker': 'AVGO', 'days_to_div': 6, 'held': True, 'in_window': True}</li><li class="list-group-item small">{'ticker': 'MU', 'days_to_div': 13, 'held': True, 'in_window': True}</li>
                                 </ul>
                             </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-7">
+                        <div class="card">
+                            <div class="card-header bg-secondary text-white">📂 Current Holdings</div>
+                            <div class="card-body p-0" style="max-height: 350px; overflow-y: auto;"><table border="1" class="dataframe table table-sm table-striped">
+  <thead>
+    <tr style="text-align: right;">
+      <th>ticker</th>
+      <th>shares</th>
+      <th>entry_price</th>
+      <th>current_price</th>
+      <th>entry_date</th>
+      <th>exdiv_date</th>
+      <th>expected_exit</th>
+      <th>unrealized_pnl</th>
+      <th>div_captured</th>
+      <th>total_return</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>AVGO</td>
+      <td>1</td>
+      <td>327.64</td>
+      <td>327.48</td>
+      <td>2026-03-16</td>
+      <td>2026-03-22</td>
+      <td>2026-05-06</td>
+      <td>-0.16</td>
+      <td>0.0</td>
+      <td>-0.16</td>
+    </tr>
+    <tr>
+      <td>PM</td>
+      <td>2</td>
+      <td>175.80</td>
+      <td>175.71</td>
+      <td>2026-03-16</td>
+      <td>2026-03-18</td>
+      <td>2026-05-02</td>
+      <td>-0.18</td>
+      <td>0.0</td>
+      <td>-0.18</td>
+    </tr>
+    <tr>
+      <td>AXP</td>
+      <td>1</td>
+      <td>298.06</td>
+      <td>297.91</td>
+      <td>2026-03-16</td>
+      <td>2026-04-01</td>
+      <td>2026-05-16</td>
+      <td>-0.15</td>
+      <td>0.0</td>
+      <td>-0.15</td>
+    </tr>
+    <tr>
+      <td>VZ</td>
+      <td>9</td>
+      <td>51.22</td>
+      <td>51.19</td>
+      <td>2026-03-16</td>
+      <td>2026-04-09</td>
+      <td>2026-05-24</td>
+      <td>-0.23</td>
+      <td>0.0</td>
+      <td>-0.23</td>
+    </tr>
+    <tr>
+      <td>ORCL</td>
+      <td>3</td>
+      <td>155.34</td>
+      <td>155.26</td>
+      <td>2026-03-16</td>
+      <td>2026-04-08</td>
+      <td>2026-05-23</td>
+      <td>-0.23</td>
+      <td>0.0</td>
+      <td>-0.23</td>
+    </tr>
+    <tr>
+      <td>ABBV</td>
+      <td>2</td>
+      <td>221.73</td>
+      <td>221.62</td>
+      <td>2026-03-16</td>
+      <td>2026-04-14</td>
+      <td>2026-05-29</td>
+      <td>-0.22</td>
+      <td>0.0</td>
+      <td>-0.22</td>
+    </tr>
+    <tr>
+      <td>WMT</td>
+      <td>3</td>
+      <td>125.48</td>
+      <td>125.42</td>
+      <td>2026-03-16</td>
+      <td>2026-03-19</td>
+      <td>2026-05-03</td>
+      <td>-0.19</td>
+      <td>0.0</td>
+      <td>-0.19</td>
+    </tr>
+    <tr>
+      <td>JPM</td>
+      <td>1</td>
+      <td>285.71</td>
+      <td>285.57</td>
+      <td>2026-03-16</td>
+      <td>2026-04-08</td>
+      <td>2026-05-23</td>
+      <td>-0.14</td>
+      <td>0.0</td>
+      <td>-0.14</td>
+    </tr>
+    <tr>
+      <td>CSCO</td>
+      <td>6</td>
+      <td>78.37</td>
+      <td>78.33</td>
+      <td>2026-03-16</td>
+      <td>2026-04-01</td>
+      <td>2026-05-16</td>
+      <td>-0.23</td>
+      <td>0.0</td>
+      <td>-0.23</td>
+    </tr>
+    <tr>
+      <td>MU</td>
+      <td>1</td>
+      <td>447.27</td>
+      <td>447.05</td>
+      <td>2026-03-16</td>
+      <td>2026-03-29</td>
+      <td>2026-05-13</td>
+      <td>-0.22</td>
+      <td>0.0</td>
+      <td>-0.22</td>
+    </tr>
+  </tbody>
+</table></div>
                         </div>
                     </div>
                     
