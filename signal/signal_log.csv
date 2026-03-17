@@ -12,3 +12,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-03-16,MU,BUY,445.95,1.121195,500.0,4500.0,,0.0,,Div in 13 days
 2026-03-16,META,BUY,627.48,0.796834,500.0,4000.0,,0.0,,Div in 3 days
 2026-03-16,GEV,BUY,825.0,0.606059,500.0,3500.0,,0.0,,Div in 23 days
+2026-03-16,META,DIVIDEND,0.53,0.796834,0.42,3500.42,,0.42,0.42,Dividend Payment
