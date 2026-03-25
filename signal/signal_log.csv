@@ -18,3 +18,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-03-20,WMT,DIVIDEND,0.25,3.977952,0.99,3001.81,,0.99,0.99,Dividend Payment
 2026-03-20,T,BUY,28.32,17.245928,488.48,2513.34,,0.0,,Div in 25 days
 2026-03-20,PG,BUY,144.35,3.383922,488.48,2024.86,,0.0,,Div in 35 days
+2026-03-24,AVGO,SELL,318.13,1.533093,487.72,2512.59,-12.28,0.0,-12.28,45 days post-div
