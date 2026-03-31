@@ -21,3 +21,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-03-24,AVGO,SELL,318.13,1.533093,487.72,2512.59,-12.28,0.0,-12.28,45 days post-div
 2026-03-27,MU,SELL,357.04,1.121195,400.31,2912.9,-99.69,0.0,-99.69,45 days post-div
 2026-03-27,COST,BUY,984.35,0.490706,483.03,2429.87,,0.0,,Div in 35 days
+2026-03-30,MS,BUY,158.45,3.044537,482.4,1947.47,,0.0,,Div in 33 days
