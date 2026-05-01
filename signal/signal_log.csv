@@ -32,3 +32,6 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-04-15,ABBV,DIVIDEND,1.73,2.25204,3.9,3.9,,3.9,3.9,Dividend Payment
 2026-04-20,CAT,DIVIDEND,1.51,0.711744,1.07,4.97,,1.07,1.07,Dividend Payment
 2026-04-24,PG,DIVIDEND,1.09,3.383922,3.69,8.66,,3.69,3.69,Dividend Payment
+2026-04-30,MS,DIVIDEND,1.0,3.044537,3.04,11.7,,3.04,3.04,Dividend Payment
+2026-04-30,META,SELL,611.6,0.796834,487.35,499.05,-12.65,0.42,-12.24,45 days post-div
+2026-04-30,TXN,BUY,281.22,1.774575,499.05,0.0,,0.0,,Div in 4 days
