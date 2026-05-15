@@ -51,3 +51,5 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-05-12,V,DIVIDEND,0.67,1.577412,1.06,46.24,,1.06,1.06,Dividend Payment
 2026-05-13,INTC,SELL,120.23,5.293724,636.46,682.7,108.84,0.0,108.84,45 days post-div
 2026-05-13,KLAC,BUY,1850.63,0.290274,537.19,145.51,,0.0,,Div in 4 days
+2026-05-14,XOM,SELL,152.7,3.417078,521.8,667.31,-3.63,0.0,-3.63,45 days post-div
+2026-05-14,PM,BUY,191.96,2.840555,545.26,122.05,,0.0,,Div in 35 days
