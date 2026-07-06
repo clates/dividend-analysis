@@ -105,3 +105,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-07-02,KLAC,SELL,235.43,0.290274,68.34,642.38,-468.85,0.67,-468.18,45 days post-div
 2026-07-02,CSCO,SELL,112.63,4.356772,490.72,1133.1,-39.02,0.0,-39.02,45 days post-div
 2026-07-02,TXN,BUY,293.23,1.819555,533.54,599.55,,0.0,,Div in 34 days
+2026-07-02,GS,SELL,1020.49,0.555709,567.1,1166.65,14.16,2.5,16.66,45 days post-div
