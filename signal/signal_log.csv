@@ -120,3 +120,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-07-09,LLY,BUY,1217.56,0.218742,266.33,0.0,,0.0,,Div in 35 days
 2026-07-10,JNJ,SELL,256.85,2.370072,608.76,608.76,59.27,3.18,62.44,45 days post-div
 2026-07-10,XOM,BUY,138.95,3.770864,523.96,84.8,,0.0,,Div in 35 days
+2026-07-15,ABBV,DIVIDEND,1.73,2.37442,4.11,88.9,,4.11,4.11,Dividend Payment
