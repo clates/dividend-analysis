@@ -122,3 +122,5 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-07-10,XOM,BUY,138.95,3.770864,523.96,84.8,,0.0,,Div in 35 days
 2026-07-15,ABBV,DIVIDEND,1.73,2.37442,4.11,88.9,,4.11,4.11,Dividend Payment
 2026-07-21,DELL,DIVIDEND,0.63,1.275094,0.8,89.71,,0.8,0.8,Dividend Payment
+2026-07-24,PG,DIVIDEND,1.09,3.58531,3.9,93.61,,3.9,3.9,Dividend Payment
+2026-07-24,COST,DIVIDEND,1.47,0.560449,0.82,94.44,,0.82,0.82,Dividend Payment
