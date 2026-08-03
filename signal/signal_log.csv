@@ -124,3 +124,5 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-07-21,DELL,DIVIDEND,0.63,1.275094,0.8,89.71,,0.8,0.8,Dividend Payment
 2026-07-24,PG,DIVIDEND,1.09,3.58531,3.9,93.61,,3.9,3.9,Dividend Payment
 2026-07-24,COST,DIVIDEND,1.47,0.560449,0.82,94.44,,0.82,0.82,Dividend Payment
+2026-07-31,MS,DIVIDEND,1.15,2.469071,2.84,97.28,,2.84,2.84,Dividend Payment
+2026-07-31,TXN,DIVIDEND,1.42,1.819555,2.58,99.86,,2.58,2.58,Dividend Payment
