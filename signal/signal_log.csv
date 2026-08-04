@@ -126,3 +126,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-07-24,COST,DIVIDEND,1.47,0.560449,0.82,94.44,,0.82,0.82,Dividend Payment
 2026-07-31,MS,DIVIDEND,1.15,2.469071,2.84,97.28,,2.84,2.84,Dividend Payment
 2026-07-31,TXN,DIVIDEND,1.42,1.819555,2.58,99.86,,2.58,2.58,Dividend Payment
+2026-08-03,C,DIVIDEND,0.67,3.774543,2.53,102.39,,2.53,2.53,Dividend Payment
