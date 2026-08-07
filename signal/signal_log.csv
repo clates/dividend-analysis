@@ -127,3 +127,5 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-07-31,MS,DIVIDEND,1.15,2.469071,2.84,97.28,,2.84,2.84,Dividend Payment
 2026-07-31,TXN,DIVIDEND,1.42,1.819555,2.58,99.86,,2.58,2.58,Dividend Payment
 2026-08-03,C,DIVIDEND,0.67,3.774543,2.53,102.39,,2.53,2.53,Dividend Payment
+2026-08-06,AVGO,SELL,420.36,1.288781,541.75,644.14,-0.72,0.84,0.12,45 days post-div
+2026-08-06,AMGN,BUY,405.05,1.282142,519.33,124.81,,0.0,,Div in 14 days
