@@ -145,3 +145,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-08-14,LLY,DIVIDEND,1.73,0.218742,0.38,0.38,,0.38,0.38,Dividend Payment
 2026-08-14,XOM,SELL,160.02,3.770864,603.41,603.79,79.45,0.0,79.45,45 days post-div
 2026-08-14,GS,BUY,1039.94,0.508534,528.84,74.95,,0.0,,Div in 17 days
+2026-08-17,KLAC,DIVIDEND,0.23,2.527214,0.58,75.53,,0.58,0.58,Dividend Payment
