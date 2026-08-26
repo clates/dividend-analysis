@@ -151,3 +151,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-08-20,AVGO,BUY,364.21,1.414529,515.19,132.45,,0.0,,Div in 32 days
 2026-08-24,MA,SELL,599.56,1.143084,685.35,817.8,129.91,0.99,130.9,45 days post-div
 2026-08-24,PM,BUY,191.56,2.71772,520.59,297.2,,0.0,,Div in 31 days
+2026-08-25,JNJ,DIVIDEND,1.34,2.018936,2.71,299.91,,2.71,2.71,Dividend Payment
