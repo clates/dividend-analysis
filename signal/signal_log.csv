@@ -188,3 +188,5 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-09-25,DELL,BUY,563.17,0.900445,507.1,428.31,,0.0,,Div in 24 days
 2026-09-28,LLY,SELL,1184.19,0.218742,259.03,687.34,-7.3,0.38,-6.92,45 days post-div
 2026-09-28,MS,BUY,193.74,2.604214,504.53,182.81,,0.0,,Div in 33 days
+2026-09-30,AXP,SELL,303.95,1.566271,476.06,658.87,-46.08,0.0,-46.08,45 days post-div
+2026-09-30,C,BUY,129.54,3.869605,501.29,157.59,,0.0,,Div in 32 days
