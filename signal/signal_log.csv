@@ -192,3 +192,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-09-30,C,BUY,129.54,3.869605,501.29,157.59,,0.0,,Div in 32 days
 2026-10-01,KLAC,SELL,200.23,2.527214,506.02,663.61,-23.36,0.58,-22.78,45 days post-div
 2026-10-01,WFC,BUY,80.29,6.246842,501.56,162.05,,0.0,,Div in 35 days
+2026-10-02,CSCO,DIVIDEND,0.42,4.746318,1.99,164.04,,1.99,1.99,Dividend Payment
