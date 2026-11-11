@@ -223,3 +223,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-11-09,AAPL,SELL,350.51,1.530327,536.4,1286.89,26.72,0.0,26.72,45 days post-div
 2026-11-09,JNJ,BUY,282.25,1.799772,507.99,778.9,,0.0,,Div in 14 days
 2026-11-09,NVDA,BUY,178.76,2.841739,507.99,270.91,,0.0,,Div in 31 days
+2026-11-10,V,DIVIDEND,0.78,1.26095,0.98,271.9,,0.98,0.98,Dividend Payment
