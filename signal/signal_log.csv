@@ -227,3 +227,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-11-13,LLY,DIVIDEND,1.73,0.436508,0.76,272.65,,0.76,0.76,Dividend Payment
 2026-11-13,INTC,SELL,59.63,4.770252,284.45,557.1,-226.6,0.0,-226.6,45 days post-div
 2026-11-13,GS,BUY,917.02,0.556113,509.97,47.14,,0.0,,Div in 18 days
+2026-11-16,XOM,DIVIDEND,1.07,2.843683,3.04,50.18,,3.04,3.04,Dividend Payment
