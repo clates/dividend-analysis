@@ -235,3 +235,4 @@ Date,Ticker,Action,Price,Shares,Value,CashReserves,PricePnL,DivCaptured,TotalPnL
 2026-11-19,LRCX,BUY,203.78,2.441545,497.54,106.42,,0.0,,Div in 12 days
 2026-11-23,ORCL,SELL,113.62,3.16057,359.11,465.53,-154.8,1.58,-153.22,45 days post-div
 2026-11-23,LIN,BUY,517.26,0.899996,465.53,0.0,,0.0,,Div in 9 days
+2026-11-24,JNJ,DIVIDEND,1.34,1.799772,2.41,2.41,,2.41,2.41,Dividend Payment
